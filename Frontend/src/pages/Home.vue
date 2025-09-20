@@ -120,7 +120,7 @@ const carregarResumoFinanceiro = async () => {
     message.success('Dados atualizados com sucesso!')
   } catch (error) {
     console.warn('Erro ao carregar resumo da API, usando dados do gráfico:', error)
-    message.warning('Usando dados locais - API não disponível')
+    message.warning('API não disponível')
   } finally {
     carregandoIndicadores.value = false
   }

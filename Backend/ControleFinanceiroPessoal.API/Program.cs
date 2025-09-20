@@ -4,7 +4,6 @@ using ControleFinanceiroPessoal.Application.Services;
 using ControleFinanceiroPessoal.Domain.Interfaces;
 using ControleFinanceiroPessoal.Infrastructure.Data.Context;
 using ControleFinanceiroPessoal.Infrastructure.Repositories;
-using ControleFinanceiroPessoal.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -28,7 +27,8 @@ builder.Services.AddScoped<IMovimentacaoRepository, MovimentacaoRepository>();
 // Services
 builder.Services.AddScoped<IMovimentacaoService, MovimentacaoService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddScoped<IJobService, JobService>();
+builder.Services.AddSingleton<JobService>();
+builder.Services.AddHostedService<JobService>(provider => provider.GetRequiredService<JobService>());
 
 // Email Settings
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));

@@ -1,54 +1,80 @@
-﻿using ControleFinanceiroPessoal.Application.Interfaces;
+using ControleFinanceiroPessoal.Application.Interfaces;
 using ControleFinanceiroPessoal.Domain.Interfaces;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ControleFinanceiroPessoal.Infrastructure.Services
+namespace ControleFinanceiroPessoal.Application.Services
 {
-    public class JobService : IJobService
+    public class JobService : IHostedService, IDisposable
     {
-        private readonly IEmailService _emailService;
-        private readonly IMovimentacaoRepository _movimentacaoRepository;
+        private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<JobService> _logger;
+        private readonly IConfiguration _configuration;
+        private Timer? _timer;
+        private bool _disposed = false;
 
         public JobService(
-            IEmailService emailService,
-            IMovimentacaoRepository movimentacaoRepository,
-            ILogger<JobService> logger)
+            IServiceProvider serviceProvider,
+            ILogger<JobService> logger,
+            IConfiguration configuration)
         {
-            _emailService = emailService;
-            _movimentacaoRepository = movimentacaoRepository;
+            _serviceProvider = serviceProvider;
             _logger = logger;
+            _configuration = configuration;
         }
 
-        public async Task ExecutarVerificacaoSaldoDiarioAsync()
+        public async void ExecutarVerificacaoSaldoDiarioAsync(object? state)
         {
             try
             {
                 _logger.LogInformation("Iniciando verificação de saldo diário...");
 
-                var saldo = await _movimentacaoRepository.GetSaldoAtualAsync();
+                using var scope = _serviceProvider.CreateScope();
+                var movimentacaoRepository = scope.ServiceProvider.GetRequiredService<IMovimentacaoRepository>();
+                var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+
+                var saldo = await movimentacaoRepository.GetSaldoAtualAsync();
 
                 if (saldo < 0)
                 {
-                    var saldoAtual = await _movimentacaoRepository.GetSaldoAtualAsync();
-                    await _emailService.EnviarNotificacaoSaldoNegativoAsync(saldoAtual);
-
-                    _logger.LogWarning($"Saldo negativo detectado: R$ {saldoAtual:N2}. Notificação enviada por e-mail.");
-                }
-                else
-                {
-                    _logger.LogInformation("Saldo positivo. Nenhuma notificação necessária.");
+                    await emailService.EnviarNotificacaoSaldoNegativoAsync(saldo);
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro durante a verificação de saldo diário");
                 throw;
+            }
+        }
+
+        public Task StartAsync(CancellationToken cancellationToken)
+        {
+            // Cria o timer com a primeira execução no tempo calculado e depois a cada 24 horas
+            _timer = new Timer(ExecutarVerificacaoSaldoDiarioAsync, null, TimeSpan.Zero, TimeSpan.FromDays(1));
+
+            return Task.CompletedTask;
+        }
+
+        public Task StopAsync(CancellationToken cancellationToken)
+        {
+            _timer?.Change(Timeout.Infinite, 0);
+            
+            return Task.CompletedTask;
+        }
+
+        public void Dispose()
+        {
+            if (!_disposed)
+            {
+                _timer?.Dispose();
+                _disposed = true;
             }
         }
     }
