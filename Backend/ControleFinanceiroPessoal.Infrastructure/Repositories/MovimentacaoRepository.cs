@@ -32,23 +32,6 @@ namespace ControleFinanceiroPessoal.Infrastructure.Repositories
             return await _context.Movimentacoes.FindAsync(id);
         }
 
-        public async Task<IEnumerable<Movimentacao>> GetByPeriodoAsync(DateTime dataInicio, DateTime dataFim)
-        {
-            return await _context.Movimentacoes
-                .Where(m => m.Data >= dataInicio && m.Data <= dataFim)
-                .OrderByDescending(m => m.Data)
-                .ThenByDescending(m => m.Id)
-                .ToListAsync();
-        }
-
-        public async Task<IEnumerable<Movimentacao>> GetByDataAsync(DateTime data)
-        {
-            return await _context.Movimentacoes
-                .Where(m => m.Data.Date == data.Date)
-                .OrderByDescending(m => m.Id)
-                .ToListAsync();
-        }
-
         public async Task<decimal> GetSaldoAtualAsync()
         {
             var totalReceitas = await _context.Movimentacoes
@@ -66,14 +49,6 @@ namespace ControleFinanceiroPessoal.Infrastructure.Repositories
         {
             return await _context.Movimentacoes
                 .Where(m => m.Tipo == TipoMovimentacao.Receita &&
-                           m.Data >= dataInicio && m.Data <= dataFim)
-                .SumAsync(m => m.Valor);
-        }
-
-        public async Task<decimal> GetTotalDespesasPeriodoAsync(DateTime dataInicio, DateTime dataFim)
-        {
-            return await _context.Movimentacoes
-                .Where(m => m.Tipo == TipoMovimentacao.Despesa &&
                            m.Data >= dataInicio && m.Data <= dataFim)
                 .SumAsync(m => m.Valor);
         }

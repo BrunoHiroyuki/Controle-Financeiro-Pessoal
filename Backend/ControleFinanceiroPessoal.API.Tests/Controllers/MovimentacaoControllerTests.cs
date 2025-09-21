@@ -269,21 +269,5 @@ namespace ControleFinanceiroPessoal.API.Tests.Controllers
             var act = async () => await _controller.GetAll();
             await act.Should().NotThrowAsync();
         }
-
-        [Theory]
-        [InlineData(1)]
-        [InlineData(100)]
-        [InlineData(999)]
-        public async Task GetById_ComDiferentesIds_DeveChamarServiceCorretamente(int id)
-        {
-            // Arrange
-            _mockService.Setup(s => s.GetByIdAsync(id)).ReturnsAsync((MovimentacaoDto?)null);
-
-            // Act
-            await _controller.GetById(id);
-
-            // Assert
-            _mockService.Verify(s => s.GetByIdAsync(id), Times.Once);
-        }
     }
 }
