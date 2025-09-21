@@ -50,20 +50,7 @@
       @dados-carregados="atualizarIndicadores"
       ref="chartRef"
     />
-
-    <!-- Botão para recarregar dados -->
-    <div style="text-align: center; margin-top: 20px;">
-      <n-button 
-        type="primary" 
-        @click="recarregarTodosDados"
-        :loading="carregandoIndicadores"
-      >
-        <template #icon>
-          <n-icon><RefreshOutline /></n-icon>
-        </template>
-        Atualizar Dados
-      </n-button>
-    </div>
+    
   </div>
 </template>
 
